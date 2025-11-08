@@ -1,0 +1,59 @@
+sudo apt install python3-venv
+python3 -m venv scraping
+source scraping/bin/activate
+
+python -m pip install pip --upgrade
+python -m pip install -r requirements.txt
+
+make src folder
+cd src
+django-admin startproject scraphome .
+
+
+compose.yml :
+
+version: '3.9'
+services:
+    redis:
+        image: redis
+        restart: always
+        ports:
+            - 6170:6379
+        volumes:
+            - data:/data
+        entrypoint: redis-server --appendonly yes
+volumes:
+    data:
+
+networks:
+  default:
+    name: scrape_scheduler_network
+
+docker compose up
+
+cd src
+.env: CELERY_BROKER_REDIS_URL="redis://localhost:6170"
+
+settings.py
+celery.py
+__init__.py
+
+celery -A scraphome worker --beat -l info
+
+cd src
+django-admin startapp movies
+make file tasks.py inside movies and copy paste the tasks.
+
+Register movies in INSTALLED_APPS
+
+Make sure Redis instance is running at this time and celery is stopped.
+python manage.py shell
+from movies.tasks import add
+add.delay(1,2)
+
+To start celery to pick task
+celery -A scraphome worker --beat -l info
+
+
+Update movies.tasks.py with more methods from Repo.
+Update celery.py inside scraphome with more scheduled jobs from Repo.
